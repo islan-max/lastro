@@ -18,6 +18,11 @@ export function formatarReais(centavos) {
   return formatador.format(centavos / 100);
 }
 
+/** Com sinal explícito (+R$ 1,00 / -R$ 1,00): a cor nunca é a única pista do ganho ou da perda. */
+export function formatarReaisSinal(centavos) {
+  return (centavos > 0 ? "+" : "") + formatarReais(centavos);
+}
+
 export function formatarPercentual(razao) {
   if (razao === null || !Number.isFinite(razao)) return "—";
   return new Intl.NumberFormat("pt-BR", {
