@@ -8,6 +8,8 @@
   <title>Lastro — carteira e alertas da B3</title>
   <meta name="description" content="Carteira de ações e FIIs da B3 no seu navegador: compras, vendas, proventos, resultado e alertas de preço. Sem conta, sem anúncios, sem recomendação de investimento.">
   <meta name="color-scheme" content="dark light">
+  <!-- Endereço do Worker de cotações (também na CSP, em connect-src). Vazio = só modo demonstração. -->
+  <meta name="lastro-worker" content="">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/estilo.css">
   <script src="js/tema.js"></script>
@@ -20,7 +22,10 @@
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 4 9v4l12-6 12 6V9L16 3Zm-9 12v10l9 4 9-4V15l-9 4-9-4Z" fill="currentColor"/></svg>
       <span class="nome">Lastro</span>
     </div>
-    <div class="ferramentas">
+    <div class="ferramentas acoes">
+      <button type="button" id="alternar-fonte" class="botao botao-leve" hidden>
+        Preços: <span id="fonte-estado">demonstração</span>
+      </button>
       <button type="button" id="alternar-tema" class="botao botao-leve" aria-describedby="tema-estado">
         Tema: <span id="tema-estado">sistema</span>
       </button>

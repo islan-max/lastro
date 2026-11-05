@@ -5,6 +5,7 @@ import { carregar, salvar, lerJson, paraJson, paraCsv, vazio } from "./armazenam
 import { formatarPercentual, formatarReais, formatarReaisSinal, reaisParaCentavos } from "./moeda.js";
 import { normalizarSimbolo } from "./simbolo.js";
 import { CATALOGO, carteiraExemplo, fonteDemo } from "./demo.js";
+import { criarFonteReal } from "./fonte-real.js";
 
 const $ = (id) => document.getElementById(id);
 const ROTULO_TIPO = { compra: "Compra", venda: "Venda", provento: "Provento" };
@@ -14,6 +15,9 @@ let dados = carregar();
 let cotacoes = {}; // SIMBOLO -> { precoCentavos, horario, origem }
 let semPreco = {}; // SIMBOLO -> mensagem
 let fonte = fonteDemo;
+let fonteReal = null; // só existe se o site aponta para um Worker (meta lastro-worker)
+let temporizador = null;
+let tentativasPendentes = 0;
 
 function el(tag, props = {}, ...filhos) {
   const e = document.createElement(tag);
@@ -60,8 +64,9 @@ function confirmar(titulo, texto, ok = "Confirmar") {
 
 function descreverCotacao(c) {
   if (c.origem === "simulado") return `simulado, ${hora(c.horario, true)}`;
-  if (c.origem === "fechamento") return `fechamento de ${dataBR(c.horario.slice(0, 10))}`;
-  return `atrasada ~30 min, ${hora(c.horario)}`;
+  const velho = c.desatualizado ? ", desatualizada" : "";
+  if (c.origem === "fechamento") return `fechamento de ${dataBR(c.horario.slice(0, 10))}${velho}`;
+  return `atrasada ~30 min, ${hora(c.horario)}${velho}`;
 }
 
 function celula(tag, texto, classe, extra) {
@@ -242,9 +247,11 @@ async function atualizarPrecos() {
   const simbolos = simbolosNecessarios();
   if (simbolos.length === 0) return;
   try {
-    const r = await fonte.buscar(simbolos);
+    const usada = fonte;
+    const r = await usada.buscar(simbolos);
+    if (usada !== fonte) return; // o usuário trocou de fonte no meio da busca
     Object.assign(cotacoes, r.cotacoes);
-    semPreco = r.erros;
+    semPreco = { ...r.erros, ...Object.fromEntries((r.pendentes ?? []).map((s) => [s, "buscando o preço…"])) };
     const aviso = $("fonte-erro");
     delete aviso.dataset.fixo;
     const faltam = Object.entries(r.erros);
@@ -253,13 +260,47 @@ async function atualizarPrecos() {
       aviso.dataset.fixo = "1";
       aviso.hidden = false;
     }
-  } catch {
-    $("fonte-erro").textContent = "Não consegui buscar os preços agora. Mostrando o último preço que tenho; tento de novo em instantes.";
+    if (r.pendentes?.length && tentativasPendentes < 6) {
+      // O serviço busca poucos ativos por vez para respeitar a cota: pede o resto em seguida.
+      tentativasPendentes += 1;
+      setTimeout(atualizarPrecos, 4000);
+    } else {
+      tentativasPendentes = 0;
+    }
+  } catch (e) {
+    $("fonte-erro").textContent = `${fonte.id === "real" ? (e?.message ?? "Não consegui buscar os preços agora.") : "Não consegui buscar os preços agora."} Mostrando o último preço que tenho; tento de novo em instantes. Você pode trocar para a demonstração.`;
     $("fonte-erro").dataset.fixo = "1";
     $("fonte-erro").hidden = false;
   }
   render();
   checarAlertas();
+}
+
+function aplicarFonte(nova) {
+  fonte = nova;
+  cotacoes = {}; // nunca mistura preço simulado com preço real
+  semPreco = {};
+  tentativasPendentes = 0;
+  $("fonte-estado").textContent = fonte.id === "real" ? "atrasados (reais)" : "demonstração";
+  $("aviso-fonte").textContent =
+    fonte.id === "real"
+      ? "Cotações com atraso de cerca de 30 minutos, fornecidas pela brapi. Fora do pregão (seg–sex, 10h–18h) valem o último fechamento."
+      : "Modo demonstração: todos os preços são simulados (movem-se a cada 15 s só para você ver o Lastro funcionando) e não valem nada.";
+  clearInterval(temporizador);
+  temporizador = setInterval(atualizarPrecos, fonte.intervaloMs);
+  render();
+  atualizarPrecos();
+}
+
+function alternarFonte() {
+  const nova = fonte.id === "real" ? fonteDemo : fonteReal;
+  try {
+    localStorage.setItem("lastro:fonte", nova.id);
+  } catch {
+    /* vale só nesta visita */
+  }
+  aplicarFonte(nova);
+  anunciar(`Preços: ${$("fonte-estado").textContent}.`);
 }
 
 function checarAlertas() {
@@ -488,7 +529,19 @@ function iniciar() {
   for (const a of CATALOGO) dl.append(el("option", { value: a.simbolo, label: a.nome }));
   $("f-data").value = hojeISO();
   $("f-data").max = hojeISO();
-  $("aviso-fonte").textContent = "Modo demonstração: todos os preços são simulados (movem-se a cada 15 s só para você ver o Lastro funcionando) e não valem nada.";
+  const worker = document.querySelector('meta[name="lastro-worker"]')?.content.trim();
+  if (worker && /^https:\/\/[^/\s]+$/.test(worker)) {
+    fonteReal = criarFonteReal(worker);
+    $("alternar-fonte").hidden = false;
+    $("alternar-fonte").addEventListener("click", alternarFonte);
+    let preferida = "real";
+    try {
+      preferida = localStorage.getItem("lastro:fonte") ?? "real";
+    } catch {
+      /* usa o padrão */
+    }
+    fonte = preferida === "demo" ? fonteDemo : fonteReal;
+  }
   aplicarTema(document.documentElement.dataset.theme);
   trocarTipo();
 
@@ -510,9 +563,7 @@ function iniciar() {
     if (!document.hidden) atualizarPrecos();
   });
 
-  render();
-  atualizarPrecos();
-  setInterval(atualizarPrecos, fonte.intervaloMs);
+  aplicarFonte(fonte);
 }
 
 iniciar();
