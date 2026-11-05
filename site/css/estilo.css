@@ -94,7 +94,7 @@ main { padding: 1.25rem 1rem 2rem; }
 .mensagem { padding: .6rem .8rem; border-radius: .5rem; border: 1px solid var(--borda); margin-block: .5rem; }
 .mensagem.erro { border-color: var(--negativo); color: var(--texto); }
 
-.cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .75rem; margin: 0 0 .75rem; }
+.cartoes { min-height: 9rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .75rem; margin: 0 0 .75rem; }
 .cartoes > div { border: 1px solid var(--borda); border-radius: .6rem; padding: .6rem .8rem; background: var(--fundo); }
 .cartoes dt { color: var(--suave); font-size: .9rem; }
 .cartoes dd { margin: 0; font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
