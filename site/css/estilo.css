@@ -100,7 +100,7 @@ main { padding: 1.25rem 1rem 2rem; }
 .cartoes dd { margin: 0; font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .cartoes dd small { display: block; font-size: .85rem; font-weight: 500; color: var(--suave); }
 
-.rolagem { overflow-x: auto; border: 1px solid var(--borda); border-radius: .5rem; }
+.rolagem { position: relative; overflow-x: auto; border: 1px solid var(--borda); border-radius: .5rem; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 th, td { padding: .5rem .65rem; text-align: left; border-bottom: 1px solid var(--borda); vertical-align: top; }
 thead th { background: var(--fundo); font-size: .88rem; white-space: nowrap; }
