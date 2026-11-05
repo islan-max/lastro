@@ -162,10 +162,11 @@ test("avisos obrigatórios sempre visíveis", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Avisos importantes" })).toBeVisible();
 });
 
-test("privacidade: sem cookies e sem requisições para outros endereços", async ({ page, context }) => {
+test("privacidade: sem cookies e sem requisições para outros endereços", async ({ page, context, baseURL }) => {
   const externas = [];
+  const origem = new URL(baseURL).origin;
   page.on("request", (r) => {
-    if (!r.url().startsWith("http://localhost") && !r.url().startsWith(new URL("./", page.url() || "http://localhost").origin) && !r.url().startsWith("data:")) externas.push(r.url());
+    if (!r.url().startsWith(origem) && !r.url().startsWith("data:")) externas.push(r.url());
   });
   await page.goto("./");
   await lancarCompra(page);
