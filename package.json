@@ -1,0 +1,12 @@
+{
+  "name": "lastro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Carteira e alertas de preço da B3, local-first. Não é recomendação de investimento.",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\""
+  }
+}
