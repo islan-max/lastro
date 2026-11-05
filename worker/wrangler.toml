@@ -1,0 +1,12 @@
+name = "lastro-cotacoes"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+ORIGENS_PERMITIDAS = "https://islan-max.github.io"
+
+# Criar com: npx wrangler kv namespace create COTACOES  (e colar o id abaixo)
+# O token da brapi NÃO fica aqui: npx wrangler secret put BRAPI_TOKEN
+[[kv_namespaces]]
+binding = "COTACOES"
+id = "PREENCHER_COM_O_ID_DO_KV"

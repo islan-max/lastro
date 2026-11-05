@@ -23,7 +23,8 @@
     </section>
     <section class="bloco">
       <h2>O que sai do seu navegador</h2>
-      <p>Nesta versão, nada: o modo demonstração gera preços simulados no próprio navegador. Quando as cotações reais forem ativadas, só os <strong>símbolos</strong> dos ativos que você acompanha (por exemplo PETR4) serão pedidos a um servidor de cache. Quantidades, preços pagos, datas, valores e alertas nunca saem do navegador.</p>
+      <p>No modo demonstração, nada: os preços simulados são gerados no próprio navegador. Com as cotações atrasadas ativas (botão “Preços” no topo da carteira), só os <strong>símbolos</strong> dos ativos que você acompanha (por exemplo PETR4) são pedidos a um servidor de cache do Lastro, que por sua vez consulta a brapi com uma chave que só ele conhece. Quantidades, preços pagos, datas, valores e alertas nunca saem do navegador. O servidor não guarda quem pediu: ele só guarda, por símbolo, o último preço (compartilhado por todos).</p>
+      <p>Como em qualquer servidor, o provedor de hospedagem (Cloudflare) pode registrar o endereço IP de quem se conecta para operar e proteger o serviço; o Lastro não lê nem guarda esse dado.</p>
     </section>
     <section class="bloco">
       <h2>Medição e rastreamento</h2>
