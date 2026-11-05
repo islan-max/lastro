@@ -5,10 +5,10 @@ Modelo: relatório de verificação e checklist de publicação do guia de desen
 ## Identificação
 
 - Projeto: `islan-max/lastro` (responsável: islan-max / bazhish).
-- Versão: `main` depois do PR #8 (mais o PR deste relatório).
-- Ambiente: **pré-publicação** (Windows com Chrome instalado; GitHub Actions, Ubuntu, Chromium do Playwright). As seções “No endereço final” só passam a valer depois do deploy e estão marcadas.
+- Versão: `main` no commit do PR #12 (site publicado a partir dele).
+- Ambiente: pré-publicação (Windows com Chrome instalado; GitHub Actions, Ubuntu, Chromium do Playwright) **e endereço final** https://islan-max.github.io/lastro/ (GitHub Pages).
 - Data e executor: 05/11/2026, agente de IA com a conta do responsável.
-- Escopo: código, 32 testes de unidade, 50 testes de navegador, CI. **Fora do alcance desta verificação:** o Worker de cotações **não foi implantado** (falta o token da brapi e a conta Cloudflare do responsável), então nenhuma cotação real foi obtida.
+- Escopo: código, 32 testes de unidade, 50 testes de navegador (local, CI e **contra o endereço publicado**), CI, Lighthouse no endereço publicado. **Fora do alcance desta verificação:** o Worker de cotações **não foi implantado** (falta o token da brapi e a conta Cloudflare do responsável), então nenhuma cotação real foi obtida.
 - Módulos consultados: S01, S04, S06, S07, S08, S09, Q01, Q02, I01, D01 (aplicáveis); S02, S03, S05, V01–V03 (N/A ou mínimo, abaixo).
 
 `T:` teste de unidade (`npm test`). `E:` teste de navegador (`e2e/`, Playwright + axe). `CI:` GitHub Actions. `I:` inspeção do código.
@@ -24,7 +24,7 @@ Modelo: relatório de verificação e checklist de publicação do guia de desen
 | S04-03 | Bloqueador | I + E | Dado do usuário ou do servidor nunca vira HTML | Nenhum `innerHTML`/`eval` no site (busca no código); DOM com `textContent`; teste de XSS e de resposta malformada do Worker | APROVADO | I, E |
 | S04-04 | Recomendado | T | CSV sem injeção de fórmula | Células iniciadas por `= + - @` recebem apóstrofo | APROVADO | T |
 | S06-01 | Bloqueador | T + I | Worker sem dado pessoal em respostas e logs | Só símbolos e preços; o Worker não registra requisições. Logs da plataforma não inspecionados | APROVADO (parcial) | T, I |
-| S07-01 | Bloqueador | HTTPS, redirecionamento e cabeçalhos no Pages | No endereço final | — | NÃO VERIFICADO | pendente: deploy |
+| S07-01 | Bloqueador | `curl` no endereço final | HTTPS, redirecionamento de HTTP e HSTS | `http://` responde 301 para `https://`; resposta com `Strict-Transport-Security: max-age=31556952`; CSP presente no HTML publicado. Cabeçalhos próprios (CSP por cabeçalho, `X-Content-Type-Options`) não são possíveis no Pages | APROVADO (parcial) | `curl -sI` em 05/11/2026 |
 | S07-02 | Bloqueador | E: CSP por `<meta>` | App funciona sem script/estilo inline; `default-src 'none'` | A CSP já bloqueou, nos testes, estilo inline injetado; o app roda sob ela. O Pages não permite cabeçalhos próprios: `frame-ancestors` e HSTS próprio não são possíveis | APROVADO (parcial) | E |
 | S07-03 | Bloqueador | T: cabeçalhos e CORS do Worker | `nosniff`, `no-referrer`, CORS só para a origem do site | Conferido em teste; **não** conferido no endereço do Worker | APROVADO (parcial) | T |
 | S08-01 | Recomendado | T | Limite por visitante | 30/min por IP em memória do isolate do Worker | APROVADO (parcial) | T |
@@ -38,9 +38,10 @@ Modelo: relatório de verificação e checklist de publicação do guia de desen
 | Q01-04 | Bloqueador | E: axe WCAG 2.0/2.1/2.2 A e AA + boas práticas | Zero violações, temas claro e escuro, todas as telas e estados | Passou: vazio, exemplo, erros de formulário, provento, diálogo aberto, alerta disparado, privacidade, 404, fonte real. Achados corrigidos: aviso fora de região, landmarks duplicados. **Automático cobre só parte dos critérios** | APROVADO (parcial) | E `acessibilidade.spec.js`, `cotacoes-reais.spec.js` |
 | Q01-05 | Bloqueador | Leitor de tela real (NVDA/VoiceOver) | Fluxos usáveis | — | NÃO VERIFICADO | pendente: responsável |
 | Q01-06 | Recomendado | Aparelho físico | Funciona no celular de verdade | Só viewport emulado | NÃO VERIFICADO | pendente: responsável |
-| Q01-07 | Recomendado | E: 404 | Página 404 com status 404 | Passou no servidor local; no Pages vale a `404.html` | APROVADO (parcial) | E |
-| Q02-01 | Recomendado | Lighthouse no endereço final | Desempenho e acessibilidade medidos | Sem bibliotecas nem fontes externas; **não medido** | NÃO VERIFICADO | pendente: deploy |
-| I01-01 | Bloqueador | Deploy do site (Pages) | Publicado e funcionando no endereço final | — | NÃO VERIFICADO | pendente: deploy |
+| Q01-07 | Recomendado | E: 404, local e no endereço final | Página 404 com status 404 e axe limpo | Passou nos dois | APROVADO | E |
+| Q01-08 | Bloqueador | E (50 testes) contra o endereço final | Mesma suíte passa no site publicado | 50 de 50, Chrome, 05/11/2026 | APROVADO | `LASTRO_URL=https://islan-max.github.io/lastro/ npx playwright test` |
+| Q02-01 | Recomendado | Lighthouse 13.6 (móvel, simulado) no endereço final | Desempenho e boas práticas medidos | Desempenho 99, acessibilidade 100, boas práticas 100, SEO 100, CLS 0, LCP 1,0 s. A primeira medição, antes do PR #12, deu desempenho 77 por deslocamento de layout (CLS 0,65: texto do aviso mudava com o JavaScript); corrigido | APROVADO | `lighthouse` em 05/11/2026 |
+| I01-01 | Bloqueador | Deploy do site (Pages) | Publicado e funcionando no endereço final | Workflow `pages.yml` publica `site/` a cada merge na `main`; endereço responde 200; `privacidade.html` 200; 404 correto | APROVADO | Actions, `curl` |
 | I01-02 | Bloqueador | Deploy do Worker | Cotações reais funcionando | **Não implantado**: precisa do token da brapi e da conta Cloudflare do responsável (passos em `docs/DEPLOY.md`) | NÃO VERIFICADO | pendente: responsável |
 | I01-03 | Recomendado | Reversão ensaiada | Voltar a versão anterior | Descrita em `docs/DEPLOY.md`; não ensaiada | NÃO VERIFICADO | pendente |
 | D01-01 | Bloqueador | E: privacidade | Sem cookies, sem requisições a outros endereços | Cookies vazios; nenhuma requisição externa (modo demonstração) | APROVADO | E |
@@ -73,12 +74,12 @@ Modelo: relatório de verificação e checklist de publicação do guia de desen
 | I01-02, F-04, F-05 | Sem cotações reais (o site funciona em demonstração) | Token da brapi + conta Cloudflare; implantar o Worker; testar um FII | responsável | Seguir `docs/DEPLOY.md` |
 | F-06 | Risco jurídico/operacional do cache compartilhado | Ler os termos de uso integrais ou perguntar ao suporte da brapi | responsável | Plano B: cada pessoa cola o próprio token (sem Worker) |
 | Q01-05, Q01-06 | Acessibilidade não confirmada com tecnologia assistiva real | Teste com NVDA/VoiceOver e com celular | responsável | Executar os fluxos de `README.md` |
-| I01-01, S07-01, Q02-01 | Dependem do endereço final | Deploy no Pages e repetição dos testes de navegador contra ele | agente | PR seguinte atualiza este relatório |
-| I01-03 | Reversão não ensaiada | Ensaiar | responsável | — |
+| I01-03 | Reversão não ensaiada | Ensaiar (reverter um commit na `main` e ver o Pages republicar) | responsável | — |
 
 ## Parecer
 
-- Estado: **PRONTO PARA PUBLICAÇÃO CONTROLADA** (site em modo demonstração). As cotações reais continuam **NÃO VERIFICADAS** e **não estão ligadas** (`<meta name="lastro-worker">` vazio).
-- Justificativa: controles bloqueadores do site estático aprovados por testes automatizados; nenhum bloqueador reprovado. Bloqueadores pendentes dependem de endereço final (S07-01, I01-01) e de contas do responsável (I01-02, F-04, F-06, Q01-05).
-- Limitações: os testes de acessibilidade automatizados não substituem leitor de tela real; a rede do Worker foi simulada; nenhuma cotação real foi obtida; os termos da brapi não foram lidos na íntegra.
+- **Site estático (modo demonstração): PUBLICADO E VERIFICADO NO ESCOPO**, em https://islan-max.github.io/lastro/, na versão do PR #12. Escopo da afirmação: o que está nas linhas APROVADO acima, no Chrome, em 05/11/2026.
+- **Cotações reais: BLOQUEADO** (não publicadas). O Worker não foi implantado e nenhuma cotação real foi obtida (I01-02, F-04, F-05); os termos da brapi não foram lidos na íntegra (F-06). O `<meta name="lastro-worker">` está vazio, então o site publicado só oferece a demonstração e **não promete** preços reais.
+- Justificativa: todos os controles bloqueadores do site estático foram aprovados (alguns apenas em parte, como indicado) e nenhum foi reprovado. Os bloqueadores abertos dependem de contas e leituras que só o responsável pode fazer (I01-02, F-04, F-06, Q01-05).
+- Limitações: os testes de acessibilidade automatizados não substituem leitor de tela real; a rede do Worker foi simulada; nenhuma cotação real foi obtida; os termos da brapi não foram lidos na íntegra; só o Chrome foi usado (não Firefox nem Safari).
 - Este relatório não declara o produto “seguro”, “acessível” nem “conforme” a qualquer norma além do que cada linha registra.
