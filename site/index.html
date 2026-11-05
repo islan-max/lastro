@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Lastro — carteira e alertas da B3</title>
+  <meta name="description" content="Carteira de ações e FIIs da B3 no seu navegador: compras, vendas, proventos, resultado e alertas de preço. Sem conta, sem anúncios, sem recomendação de investimento.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="js/tema.js"></script>
+</head>
+<body>
+  <a class="pular" href="#principal">Pular para o conteúdo</a>
+
+  <header class="topo">
+    <div class="marca">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 4 9v4l12-6 12 6V9L16 3Zm-9 12v10l9 4 9-4V15l-9 4-9-4Z" fill="currentColor"/></svg>
+      <span class="nome">Lastro</span>
+    </div>
+    <div class="ferramentas">
+      <button type="button" id="alternar-tema" class="botao botao-leve" aria-describedby="tema-estado">
+        Tema: <span id="tema-estado">sistema</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="avisos" role="note" aria-label="Avisos importantes">
+    <p><strong>Não é recomendação de investimento.</strong> O Lastro só organiza o que você lança; não indica compra, venda nem carteira.</p>
+    <p id="aviso-atraso"><strong>Preços com atraso.</strong> <span id="aviso-fonte">Modo demonstração: todos os preços são simulados.</span></p>
+  </div>
+
+  <main id="principal" tabindex="-1">
+    <h1>Sua carteira da B3</h1>
+    <p class="lead">Fica só neste navegador. Nada do que você lança é enviado a servidor algum. Faça cópias com “Exportar” para não perder.</p>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="fonte-erro" class="mensagem erro" role="alert" hidden></div>
+
+    <section aria-labelledby="h-resumo" class="bloco">
+      <h2 id="h-resumo">Resumo</h2>
+      <p id="vazio" class="vazio" hidden>
+        Sua carteira está vazia. Lance uma compra abaixo ou
+        <button type="button" id="carregar-exemplo" class="botao botao-leve">carregue uma carteira de exemplo</button>
+        para conhecer o Lastro (dados fictícios).
+      </p>
+      <dl id="resumo" class="cartoes"></dl>
+      <p class="nota" id="nota-resumo">O retorno total soma o resultado das posições abertas, o resultado das vendas e os proventos, dividido por tudo o que foi comprado. Não considera quando cada compra foi feita, nem impostos, nem corretagem além da taxa que você informa.</p>
+    </section>
+
+    <section aria-labelledby="h-posicoes" class="bloco">
+      <h2 id="h-posicoes">Posições</h2>
+      <div class="rolagem" role="region" aria-labelledby="h-posicoes" tabindex="0">
+        <table id="tabela-posicoes">
+          <caption class="so-leitor">Posições abertas e encerradas, com preço atual e resultado</caption>
+          <thead>
+            <tr>
+              <th scope="col">Ativo</th>
+              <th scope="col" class="num">Quantidade</th>
+              <th scope="col" class="num">Preço médio</th>
+              <th scope="col" class="num">Preço atual</th>
+              <th scope="col" class="num">Valor atual</th>
+              <th scope="col" class="num">Resultado</th>
+              <th scope="col" class="num">Vendas</th>
+              <th scope="col" class="num">Proventos</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-lancar" class="bloco">
+      <h2 id="h-lancar">Lançar operação</h2>
+      <form id="form-lancamento" novalidate>
+        <div class="campos">
+          <div class="campo">
+            <label for="f-tipo">Tipo</label>
+            <select id="f-tipo" name="tipo">
+              <option value="compra">Compra</option>
+              <option value="venda">Venda</option>
+              <option value="provento">Provento</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="f-simbolo">Ativo</label>
+            <input id="f-simbolo" name="simbolo" list="lista-ativos" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" aria-describedby="d-simbolo" required>
+            <datalist id="lista-ativos"></datalist>
+            <p class="ajuda" id="d-simbolo">Ex.: PETR4, HGLG11.</p>
+            <p class="erro-campo" id="e-simbolo" hidden></p>
+          </div>
+          <div class="campo">
+            <label for="f-data">Data</label>
+            <input id="f-data" name="data" type="date" required>
+            <p class="erro-campo" id="e-data" hidden></p>
+          </div>
+          <div class="campo" data-so="negocio">
+            <label for="f-quantidade">Quantidade</label>
+            <input id="f-quantidade" name="quantidade" inputmode="numeric" autocomplete="off" aria-describedby="d-quantidade">
+            <p class="ajuda" id="d-quantidade">Número inteiro de cotas ou ações.</p>
+            <p class="erro-campo" id="e-quantidade" hidden></p>
+          </div>
+          <div class="campo" data-so="negocio">
+            <label for="f-preco">Preço por unidade (R$)</label>
+            <input id="f-preco" name="preco" inputmode="decimal" autocomplete="off" aria-describedby="d-preco">
+            <p class="ajuda" id="d-preco">Ex.: 30,50</p>
+            <p class="erro-campo" id="e-preco" hidden></p>
+          </div>
+          <div class="campo" data-so="negocio">
+            <label for="f-taxas">Taxas (R$)</label>
+            <input id="f-taxas" name="taxas" inputmode="decimal" autocomplete="off" aria-describedby="d-taxas">
+            <p class="ajuda" id="d-taxas">Corretagem e emolumentos. Deixe em branco se não houve.</p>
+            <p class="erro-campo" id="e-taxas" hidden></p>
+          </div>
+          <div class="campo" data-so="provento" hidden>
+            <label for="f-subtipo">Tipo de provento</label>
+            <select id="f-subtipo" name="subtipo">
+              <option value="dividendo">Dividendo</option>
+              <option value="jcp">Juros sobre capital próprio</option>
+              <option value="rendimento">Rendimento de FII</option>
+            </select>
+          </div>
+          <div class="campo" data-so="provento" hidden>
+            <label for="f-valor">Valor recebido (R$)</label>
+            <input id="f-valor" name="valor" inputmode="decimal" autocomplete="off" aria-describedby="d-valor">
+            <p class="ajuda" id="d-valor">Total recebido, já descontado o que foi retido.</p>
+            <p class="erro-campo" id="e-valor" hidden></p>
+          </div>
+        </div>
+        <p class="erro-campo" id="e-form" role="alert" hidden></p>
+        <button type="submit" class="botao botao-principal">Adicionar lançamento</button>
+      </form>
+    </section>
+
+    <section aria-labelledby="h-lancamentos" class="bloco">
+      <h2 id="h-lancamentos">Lançamentos</h2>
+      <p id="sem-lancamentos" class="vazio">Nenhum lançamento ainda.</p>
+      <div class="rolagem" role="region" aria-labelledby="h-lancamentos" tabindex="0" id="rolagem-lancamentos" hidden>
+        <table id="tabela-lancamentos">
+          <caption class="so-leitor">Todos os lançamentos, do mais recente ao mais antigo</caption>
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Ativo</th>
+              <th scope="col" class="num">Quantidade</th>
+              <th scope="col" class="num">Preço</th>
+              <th scope="col" class="num">Taxas</th>
+              <th scope="col" class="num">Valor</th>
+              <th scope="col"><span class="so-leitor">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-alertas" class="bloco">
+      <h2 id="h-alertas">Alertas de preço</h2>
+      <p class="nota">Avisam quando o preço cruza um limite que você escolheu, <strong>só enquanto esta página estiver aberta</strong>. Com a página fechada nada é enviado (veja os limites na documentação). O preço comparado é o atrasado, não o de agora.</p>
+      <form id="form-alerta" novalidate>
+        <div class="campos">
+          <div class="campo">
+            <label for="a-simbolo">Ativo</label>
+            <input id="a-simbolo" list="lista-ativos" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" required>
+            <p class="erro-campo" id="ea-simbolo" hidden></p>
+          </div>
+          <div class="campo">
+            <label for="a-direcao">Avisar quando o preço ficar</label>
+            <select id="a-direcao">
+              <option value="acima">igual ou acima de</option>
+              <option value="abaixo">igual ou abaixo de</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="a-preco">Preço (R$)</label>
+            <input id="a-preco" inputmode="decimal" autocomplete="off">
+            <p class="erro-campo" id="ea-preco" hidden></p>
+          </div>
+        </div>
+        <button type="submit" class="botao botao-principal">Criar alerta</button>
+      </form>
+      <p class="nota" id="notif-estado"></p>
+      <button type="button" id="ativar-notificacoes" class="botao" hidden>Ativar notificações do navegador</button>
+      <ul id="lista-alertas" class="lista"></ul>
+    </section>
+
+    <section aria-labelledby="h-dados" class="bloco">
+      <h2 id="h-dados">Seus dados</h2>
+      <p class="nota" id="backup-estado"></p>
+      <div class="acoes">
+        <button type="button" id="exportar-json" class="botao">Exportar tudo (JSON)</button>
+        <button type="button" id="exportar-csv" class="botao">Exportar lançamentos (CSV)</button>
+        <input id="importar-json" type="file" accept="application/json,.json" class="so-leitor-foco">
+        <label class="botao" for="importar-json" id="rotulo-importar">Importar JSON</label>
+        <button type="button" id="apagar-tudo" class="botao botao-perigo">Apagar tudo</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <p>Lastro é software livre (MIT), <a href="https://github.com/islan-max/lastro">código no GitHub</a>. Não é recomendação de investimento nem serviço de consultoria. Cotações atrasadas fornecidas pela <a href="https://brapi.dev">brapi</a>; no modo demonstração os preços são simulados.</p>
+    <p><a href="privacidade.html">Privacidade</a> · <a href="https://github.com/islan-max/lastro/blob/main/docs/LIMITES.md">Limites conhecidos</a></p>
+  </footer>
+
+  <dialog id="dialogo" aria-labelledby="dialogo-titulo">
+    <form method="dialog">
+      <h2 id="dialogo-titulo">Confirmar</h2>
+      <p id="dialogo-texto"></p>
+      <div class="acoes">
+        <button type="submit" value="cancelar" class="botao" id="dialogo-cancelar">Cancelar</button>
+        <button type="submit" value="ok" class="botao botao-principal" id="dialogo-ok">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
